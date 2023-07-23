@@ -1,0 +1,30 @@
+name: Deploy to Firebase Hosting on merge
+'on':
+  push:
+    branches:
+      - master
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - run: npm i -g pnpm
+      - run: pnpm install --frozen-lockfile 
+      - run: npm i -g firebase-tools 
+      - name: linting
+        run: pnpm exec eslint src
+      - name: rules and app tests
+        run: | 
+          bash scripts/test.sh
+      - run: pnpm run build
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps
+      - name: Run Playwright tests
+        run: bash scripts/e2e.sh
+      - run: firebase deploy --only hosting,firestore:rules --token ${{secrets.FIREBASE_TOKEN}}
+
+
+
